@@ -1,6 +1,6 @@
 from gestores.gestor_prestamo import (
     Gestor_Prestamos,
-)  # Asegúrate de importar los gestores correspondientes
+)  
 from gestores.gestor_libro import Gestor_Libros
 from gestores.gestor_usuario import Gestor_Usuarios
 

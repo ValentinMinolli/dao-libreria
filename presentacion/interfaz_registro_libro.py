@@ -37,17 +37,18 @@ class Interfaz_Registro_Libro(ttk.Frame):
         vcmd_numero = (parent.register(self.validar_numero), "%P")
         self.entry_anio_publicacion.config(validate="key", validatecommand=vcmd_numero)
 
-        ttk.Label(self, text="ID del Autor:").grid(row=4, column=0, padx=5, pady=5)
-        self.entry_id_autor = ttk.Entry(self)
-        self.entry_id_autor.grid(row=4, column=1, padx=5, pady=5)
+         # Crear los campos para Nombre y Apellido del Autor
+        ttk.Label(self, text="Nombre del Autor:").grid(row=4, column=0, padx=5, pady=5)
+        self.entry_nombre_autor = ttk.Entry(self)
+        self.entry_nombre_autor.grid(row=4, column=1, padx=5, pady=5)
 
-        # Crear un validador que solo permite números para el id del autor
-        vcmd_numero = (parent.register(self.validar_numero), "%P")
-        self.entry_id_autor.config(validate="key", validatecommand=vcmd_numero)
+        ttk.Label(self, text="Apellido del Autor:").grid(row=5, column=0, padx=5, pady=5)
+        self.entry_apellido_autor = ttk.Entry(self)
+        self.entry_apellido_autor.grid(row=5, column=1, padx=5, pady=5)
 
-        ttk.Label(self, text="Cantidad:").grid(row=5, column=0, padx=5, pady=5)
+        ttk.Label(self, text="Cantidad:").grid(row=6, column=0, padx=5, pady=5)
         self.entry_cantidad = ttk.Entry(self)
-        self.entry_cantidad.grid(row=5, column=1, padx=5, pady=5)
+        self.entry_cantidad.grid(row=6, column=1, padx=5, pady=5)
 
         # Crear un validador que solo permite números para la cantidad
         vcmd_numero = (parent.register(self.validar_numero), "%P")
@@ -57,7 +58,7 @@ class Interfaz_Registro_Libro(ttk.Frame):
         self.boton_registrar = ttk.Button(
             self, text="Registrar Libro", command=self.registrar
         )
-        self.boton_registrar.grid(row=6, columnspan=2, pady=(20, 10))
+        self.boton_registrar.grid(row=7, columnspan=2, pady=(20, 10))
 
         # Estilo del botón
         estilo = ttk.Style()
@@ -81,37 +82,30 @@ class Interfaz_Registro_Libro(ttk.Frame):
         return False
 
     def registrar(self):
-
         isbn = self.entry_isbn.get()
         titulo = self.entry_titulo.get()
         genero = self.entry_genero.get()
         anio_publicacion = self.entry_anio_publicacion.get()
-        autor_id = self.entry_id_autor.get()
+        nombre_autor = self.entry_nombre_autor.get()
+        apellido_autor = self.entry_apellido_autor.get()
         cantidad = self.entry_cantidad.get()
 
-        # Validar campos obligatorios
-        if (
-            not isbn
-            or not titulo
-            or not genero
-            or not anio_publicacion
-            or not autor_id
-            or not cantidad
-        ):
+    # Validar campos obligatorios
+        if not all([isbn, titulo, genero, anio_publicacion, nombre_autor, apellido_autor, cantidad]):
             messagebox.showerror("Error", "Todos los campos son obligatorios.")
             return
 
-        # Registrar libro usando el gestor
-        if self.gestor_libros.registrar(
-            isbn, titulo, genero, anio_publicacion, autor_id, cantidad
-        ):
+    # Registrar libro usando el gestor
+        if self.gestor_libros.registrar_con_autor(
+            isbn, titulo, genero, anio_publicacion, nombre_autor, apellido_autor, cantidad
+    ):
             messagebox.showinfo("Éxito", "Libro registrado con éxito.")
             self.entry_isbn.delete(0, tk.END)
             self.entry_titulo.delete(0, tk.END)
             self.entry_genero.delete(0, tk.END)
             self.entry_anio_publicacion.delete(0, tk.END)
-            self.entry_id_autor.delete(0, tk.END)
+            self.entry_nombre_autor.delete(0, tk.END)
+            self.entry_apellido_autor.delete(0, tk.END)
             self.entry_cantidad.delete(0, tk.END)
-
         else:
             messagebox.showerror("Error", "No se pudo registrar el libro.")

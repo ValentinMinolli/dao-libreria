@@ -21,12 +21,27 @@ class Gestor_Libros(Notificador):
     def notificar(self):
         self.suscriptor.recibir_notificacion()
 
-    def registrar(self, isbn, titulo, genero, anio_publicacion, autor_id, cantidad):
+    def registrar_con_autor(self, isbn, titulo, genero, anio_publicacion, nombre_autor, apellido_autor, cantidad):
         """
-        Registra un libro en la base de datos si no existe previamente.
+        Registra un libro en la base de datos y maneja la creación de un autor si no existe.
         """
         try:
             cursor = self.db.get_connection().cursor()
+
+            # Verificar si el autor ya existe
+            cursor.execute(
+                "SELECT id FROM autor WHERE nombre = ? AND apellido = ?", (nombre_autor, apellido_autor)
+            )
+            autor = cursor.fetchone()
+
+            # Si el autor no existe, lo insertamos
+            if autor is None:
+                cursor.execute(
+                    "INSERT INTO autor (nombre, apellido) VALUES (?, ?)", (nombre_autor, apellido_autor)
+                )
+                autor_id = cursor.lastrowid  # Obtiene el id del nuevo autor
+            else:
+                autor_id = autor[0]  # Usamos el id del autor existente
 
             # Comprobar si el libro ya existe
             cursor.execute("SELECT * FROM libro WHERE isbn = ?", (isbn,))
@@ -34,7 +49,7 @@ class Gestor_Libros(Notificador):
                 print("El libro ya existe.")
                 return False  # El libro ya existe
 
-            # Registrar el nuevo libro
+            # Registrar el nuevo libro con el autor_id obtenido
             cursor.execute(
                 "INSERT INTO libro (isbn, titulo, genero, anio_publicacion, autor_id, cantidad) VALUES (?, ?, ?, ?, ?, ?)",
                 (isbn, titulo, genero, anio_publicacion, autor_id, cantidad),
