@@ -55,6 +55,7 @@ def crear_base_de_datos():
             libro_isbn TEXT NOT NULL,
             fecha_prestamo DATE NOT NULL,
             fecha_devolucion DATE NOT NULL,
+            estado TEXT NOT NULL DEFAULT 'Pendiente de Devolución',
             FOREIGN KEY(usuario_id) REFERENCES Usuario(id),
             FOREIGN KEY(libro_isbn) REFERENCES Libro(isbn)
             )
@@ -123,14 +124,32 @@ def cargar_datos_mock():
     cursor.execute("SELECT COUNT(*) FROM prestamo")
     if cursor.fetchone()[0] == 0:  # Si la tabla está vacía, insertar prestamos
         prestamos = [
-            ("1", "0-306-40615-2", "2024-11-07", "2024-11-15"),
-            ("1", "0-395-19395-8", "2024-11-07", "2024-11-16"),
-            ("2", "0-436-23312-4", "2024-11-07", "2024-11-16"),
-            ("3", "0-341-78421-1", "2024-11-07", "2024-11-17"),
-            ("4", "3-212-64331-3", "2024-11-07", "2024-11-18"),
+            (
+                "1",
+                "0-306-40615-2",
+                "2024-11-07",
+                "2024-11-15",
+                "Pendiente de Devolución",
+            ),
+            (
+                "1",
+                "0-395-19395-8",
+                "2024-11-07",
+                "2024-11-16",
+                "Pendiente de Devolución",
+            ),
+            ("2", "0-436-23312-4", "2024-11-07", "2024-11-16", "Devuelto"),
+            ("3", "0-341-78421-1", "2024-11-07", "2024-11-17", "Devuelvo"),
+            (
+                "4",
+                "3-212-64331-3",
+                "2024-11-07",
+                "2024-11-18",
+                "Pendiente de Devolución",
+            ),
         ]
         cursor.executemany(
-            "INSERT INTO prestamo (usuario_id, libro_isbn, fecha_prestamo, fecha_devolucion) VALUES (?, ?, ?, ?)",
+            "INSERT INTO prestamo (usuario_id, libro_isbn, fecha_prestamo, fecha_devolucion, estado) VALUES (?, ?, ?, ?, ?)",
             prestamos,
         )
 

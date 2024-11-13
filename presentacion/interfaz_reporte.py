@@ -3,80 +3,101 @@ from tkinter import messagebox
 from datetime import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+import tkinter as tk
+from tkinter import ttk, simpledialog, messagebox
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 
-# Función para generar el reporte en PDF
-def generar_reporte_prestamos_vencidos(prestamos):
-    try:
-        nombre_archivo = "reporte_prestamos_vencidos.pdf"
-        c = canvas.Canvas(nombre_archivo, pagesize=letter)
-        width, height = letter
+# from gestores.gestorServicio import GestorDeServicios
+# from gestores.gestorAuto import GestorDeAutos
+# from gestores.gestorVenta import GestorDeVentas
 
-        # Título del PDF
-        c.setFont("Helvetica-Bold", 16)
-        c.drawString(200, height - 50, "Reporte de Préstamos Vencidos")
 
-        # Detalles del préstamo
-        c.setFont("Helvetica", 10)
-        y_position = height - 80
+class Interfaz_Reportes(ttk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
 
-        for prestamo in prestamos:
-            isbn = prestamo['isbn']
-            nombre_libro = prestamo['nombre_libro']
-            fecha_prestamo = datetime.strptime(prestamo['fecha_prestamo'], "%Y-%m-%d")
-            fecha_actual = datetime.now()
+        # Configuración de estilo para los botones
+        estilo = ttk.Style()
+        estilo.configure("TButton", padding=10, font=("Arial", 10, "bold"))
 
-            # Calcular el tiempo vencido
-            tiempo_vencido = (fecha_actual - fecha_prestamo).days
+        # Título de la interfaz
+        ttk.Label(self, text="Consultas de Reportes", font=("Arial", 14, "bold")).grid(
+            row=0, column=0, columnspan=2, pady=(10, 20)
+        )
 
-            c.drawString(50, y_position, f"ISBN: {isbn}")
-            c.drawString(200, y_position, f"Nombre: {nombre_libro}")
-            c.drawString(400, y_position, f"Vencido por: {tiempo_vencido} días")
+        self.boton_listado_ventas = ttk.Button(
+            self,
+            text="Listado de préstamos vencidos",
+            command=self.listado_prestamos_vencidos,
+        )
+        self.boton_listado_ventas.grid(
+            row=1, column=0, columnspan=2, sticky="ew", padx=10, pady=10
+        )
 
-            y_position -= 20
+        self.boton_ingresos_totales = ttk.Button(
+            self,
+            text="Listado de libros más prestados en el último mes (PDF) (PDF)",
+            command=self.listado_libros_mas_prestados,
+        )
+        self.boton_ingresos_totales.grid(
+            row=2, column=0, columnspan=2, sticky="ew", padx=10, pady=10
+        )
 
-            # Si llegamos al final de la página, comenzamos una nueva página
-            if y_position < 40:
-                c.showPage()
-                y_position = height - 50
+        self.boton_autos_mas_vendidos = ttk.Button(
+            self,
+            text="Listado de usuarios que han tomado más libros en préstamo (PDF)",
+            command=self.cant_libros_prestados_a_usuario,
+        )
+        self.boton_autos_mas_vendidos.grid(
+            row=3, column=0, columnspan=2, sticky="ew", padx=10, pady=10
+        )
 
-        # Guardar el archivo PDF
-        c.save()
-        messagebox.showinfo("Éxito", f"Reporte generado: {nombre_archivo}")
-    except Exception as e:
-        messagebox.showerror("Error", f"Hubo un error al generar el reporte: {e}")
+    # Función para generar el reporte en PDF
+    def listado_prestamos_vencidos(self, prestamos):
+        try:
+            nombre_archivo = "reporte_prestamos_vencidos.pdf"
+            c = canvas.Canvas(nombre_archivo, pagesize=letter)
+            width, height = letter
 
-# Función para simular la consulta de préstamos vencidos
-def obtener_prestamos_vencidos():
-    # Datos simulados (deberían ser obtenidos de la base de datos)
-    return [
-        {"isbn": "978-3-16-148410-0", "nombre_libro": "El Gran Libro", "fecha_prestamo": "2024-10-01"},
-        {"isbn": "978-1-23-456789-7", "nombre_libro": "Python para Todos", "fecha_prestamo": "2024-08-15"},
-    ]
+            # Título del PDF
+            c.setFont("Helvetica-Bold", 16)
+            c.drawString(200, height - 50, "Reporte de Préstamos Vencidos")
 
-# Función para manejar el evento del botón
-def generar_reporte():
-    prestamos_vencidos = obtener_prestamos_vencidos()
-    if prestamos_vencidos:
-        generar_reporte_prestamos_vencidos(prestamos_vencidos)
-    else:
-        messagebox.showwarning("Sin Datos", "No hay préstamos vencidos para mostrar.")
+            # Detalles del préstamo
+            c.setFont("Helvetica", 10)
+            y_position = height - 80
 
-# Crear la ventana principal
-def crear_interfaz():
-    ventana = tk.Tk()
-    ventana.title("Generador de Reporte de Préstamos Vencidos")
-    ventana.geometry("400x200")
+            for prestamo in prestamos:
+                isbn = prestamo["isbn"]
+                nombre_libro = prestamo["nombre_libro"]
+                fecha_prestamo = datetime.strptime(
+                    prestamo["fecha_prestamo"], "%Y-%m-%d"
+                )
+                fecha_actual = datetime.now()
 
-    # Título de la ventana
-    label = tk.Label(ventana, text="Generar Reporte de Préstamos Vencidos", font=("Helvetica", 14))
-    label.pack(pady=20)
+                # Calcular el tiempo vencido
+                tiempo_vencido = (fecha_actual - fecha_prestamo).days
 
-    # Botón para generar el reporte
-    boton_generar = tk.Button(ventana, text="Generar Reporte", font=("Helvetica", 12), command=generar_reporte)
-    boton_generar.pack(pady=20)
+                c.drawString(50, y_position, f"ISBN: {isbn}")
+                c.drawString(200, y_position, f"Nombre: {nombre_libro}")
+                c.drawString(400, y_position, f"Vencido por: {tiempo_vencido} días")
 
-    # Iniciar la interfaz
-    ventana.mainloop()
+                y_position -= 20
 
-if __name__ == "__main__":
-    crear_interfaz()
+                # Si llegamos al final de la página, comenzamos una nueva página
+                if y_position < 40:
+                    c.showPage()
+                    y_position = height - 50
+
+            # Guardar el archivo PDF
+            c.save()
+            messagebox.showinfo("Éxito", f"Reporte generado: {nombre_archivo}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Hubo un error al generar el reporte: {e}")
+
+    def listado_libros_mas_prestados(self):
+        pass
+
+    def cant_libros_prestados_a_usuario(self):
+        pass

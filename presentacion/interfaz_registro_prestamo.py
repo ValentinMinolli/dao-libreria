@@ -1,14 +1,12 @@
 from gestores.gestor_prestamo import (
     Gestor_Prestamos,
-)  
+)
 from gestores.gestor_libro import Gestor_Libros
 from gestores.gestor_usuario import Gestor_Usuarios
 
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
-import re
-from datetime import datetime
 
 
 class Interfaz_Registro_Prestamo(ttk.Frame):

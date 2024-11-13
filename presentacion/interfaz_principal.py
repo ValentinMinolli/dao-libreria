@@ -4,10 +4,13 @@ from presentacion.interfaz_registro_libro import Interfaz_Registro_Libro
 from presentacion.interfaz_registro_usuario import Interfaz_Registro_Usuario
 from presentacion.interfaz_registro_prestamo import Interfaz_Registro_Prestamo
 from presentacion.interfaz_registro_devolucion import Interfaz_Devolucion_Libro
-from presentacion.interfaz_consulta_disponibilidad import Interfaz_Consulta_Disponibilidad  # Importar la nueva interfaz
-from presentacion.interfaz_reporte import interfaz_reporte  # Nueva interfaz para el reporte
+from presentacion.interfaz_consulta_disponibilidad import (
+    Interfaz_Consulta_Disponibilidad,
+)  # Importar la nueva interfaz
+from presentacion.interfaz_reporte import Interfaz_Reportes
 from entidades.notificador.suscriptor import Suscriptor
 from gestores.gestor_libro import Gestor_Libros  # Importar el gestor necesario
+
 
 class Aplicacion(Suscriptor):
     _instance = None
@@ -28,13 +31,10 @@ class Aplicacion(Suscriptor):
         self.frame_usuario = Interfaz_Registro_Usuario(self.contenedor)
         self.frame_prestamo = Interfaz_Registro_Prestamo(self.contenedor)
         self.frame_devolucion = Interfaz_Devolucion_Libro(self.contenedor)
-
-        # Nueva instancia de Interfaz_Consulta_Disponibilidad
-        gestor_libros = Gestor_Libros()
-        self.frame_consulta_disponibilidad = Interfaz_Consulta_Disponibilidad(self.contenedor, gestor_libros)
-
-        # Nueva instancia de Interfaz_Generacion_Reporte
-        self.frame_generacion_reporte = interfaz_reporte(self.contenedor, gestor_libros)
+        self.frame_reportes = Interfaz_Reportes(self.contenedor)
+        self.frame_consulta_disponibilidad = Interfaz_Consulta_Disponibilidad(
+            self.contenedor
+        )
 
         # Agregar las páginas al contenedor
         self.contenedor.add(self.frame_auto, text="Registrar Autor")
@@ -42,8 +42,12 @@ class Aplicacion(Suscriptor):
         self.contenedor.add(self.frame_usuario, text="Registrar Usuario")
         self.contenedor.add(self.frame_prestamo, text="Registrar Prestamo")
         self.contenedor.add(self.frame_devolucion, text="Registrar Devolucion")
-        self.contenedor.add(self.frame_consulta_disponibilidad, text="Consulta Disponibilidad")
-        self.contenedor.add(self.frame_generacion_reporte, text="Generar Reporte de Préstamos Vencidos")  # Nueva pestaña de reporte
+        self.contenedor.add(
+            self.frame_consulta_disponibilidad, text="Consulta Disponibilidad"
+        )
+        self.contenedor.add(
+            self.frame_reportes, text="Generar Reportes"
+        )  # Nueva pestaña de reporte
 
         # Volver a la pestaña activa antes de recargar
         self.contenedor.select(active_index)
