@@ -284,91 +284,68 @@ class Gestor_Prestamos(Notificador):
             print(f"Error al obtener los préstamos vencidos: {e}")
             return []
 
-
-"""
-    @staticmethod
-    def convertir_fecha(fecha_str):
-
-        Convierte una fecha en formato DD/MM/YYYY a YYYY-MM-DD.
-
-        try:
-            # Convertir la fecha de DD/MM/YYYY a YYYY-MM-DD
-            fecha_obj = datetime.strptime(fecha_str, "%d/%m/%Y")
-            return fecha_obj.date()
-        except Exception as e:
-            print(f"Error al convertir la fecha: {e}")
-            return None
-
     def obtener_libros_mas_prestados_ultimo_mes(self):
         try:
             conexion = self.db.get_connection()
             cursor = conexion.cursor()
 
-            # Obtén el primer y último día del mes anterior en formato YYYY-MM-DD
+            # Obtén el primer y último día del mes anterior en formato YYYY/MM/DD
             today = datetime.now().date()
             primer_dia_mes_anterior = (
                 today.replace(day=1) - timedelta(days=1)
             ).replace(day=1)
             ultimo_dia_mes_anterior = today.replace(day=1) - timedelta(days=1)
 
+            # Convertimos las fechas al formato YYYY/MM/DD
+            primer_dia_mes_anterior = primer_dia_mes_anterior.strftime("%Y/%m/%d")
+            ultimo_dia_mes_anterior = ultimo_dia_mes_anterior.strftime("%Y/%m/%d")
+
             # Depuración: imprime las fechas de consulta
             print(
                 f"Fechas de consulta: {primer_dia_mes_anterior} a {ultimo_dia_mes_anterior}"
             )
 
-            # Imprimir las fechas de la base de datos para ver cómo están almacenadas
-            cursor.execute("SELECT DISTINCT fecha_prestamo FROM prestamo")
-            fechas_bd = cursor.fetchall()
-            print("Fechas en la base de datos:", [fecha[0] for fecha in fechas_bd])
+            # Filtrar los préstamos que están en el rango del mes anterior
+            cursor.execute(
+                """
+                SELECT libro_isbn, COUNT(*) as cantidad
+                FROM Prestamo
+                WHERE fecha_prestamo BETWEEN ? AND ?
+                GROUP BY libro_isbn
+                ORDER BY cantidad DESC
+            """,
+                (primer_dia_mes_anterior, ultimo_dia_mes_anterior),
+            )
 
-            # Filtrar las fechas de los préstamos que están en el rango del mes anterior
-            prestamos_mes_anterior = []
-            for fecha_str in fechas_bd:
-                fecha_prestamo = fecha_str[0]
-                fecha_convertida = self.convertir_fecha(
-                    fecha_prestamo
-                )  # Usamos self.convertir_fecha() aquí
-                if (
-                    fecha_convertida
-                    and primer_dia_mes_anterior
-                    <= fecha_convertida
-                    <= ultimo_dia_mes_anterior
-                ):
-                    prestamos_mes_anterior.append(fecha_str[0])
+            prestamos = cursor.fetchall()
 
-            # Depuración: imprimir los préstamos encontrados en el mes anterior
-            print("Préstamos encontrados en el mes anterior:", prestamos_mes_anterior)
+            # Depuración: imprimir los libros más prestados
+            print("Libros más prestados en el último mes:", prestamos)
 
             # Si no se encuentran préstamos, devuelve un mensaje
-            if not prestamos_mes_anterior:
+            if not prestamos:
                 print("No hay préstamos en el último mes para generar el reporte.")
                 conexion.close()
                 return []
 
-            # Crear un diccionario para contar los préstamos por ISBN
-            prestamos_dict = {}
-            for prestamo in prestamos_mes_anterior:
-                isbn = prestamo[
-                    0
-                ]  # Esto parece estar incorrecto, debería usar la columna ISBN
-                if isbn not in prestamos_dict:
-                    prestamos_dict[isbn] = 1
-                else:
-                    prestamos_dict[isbn] += 1
+            # Obtener los títulos de los libros
+            libros_mas_prestados = []
+            for prestamo in prestamos:
+                isbn = prestamo[0]
+                cantidad = prestamo[1]
 
-            # Generar la lista final de los libros más prestados
-            prestamos_formateados = []
-            for isbn, cantidad in prestamos_dict.items():
-                prestamos_formateados.append({"isbn": isbn, "cantidad": cantidad})
-
-            # Ordenar por la cantidad de préstamos (de mayor a menor)
-            prestamos_formateados.sort(key=lambda x: x["cantidad"], reverse=True)
+                # Obtener el título del libro
+                cursor.execute("SELECT titulo FROM Libro WHERE isbn = ?", (isbn,))
+                titulo = cursor.fetchone()
+                if titulo:
+                    libros_mas_prestados.append(
+                        {"isbn": isbn, "titulo": titulo[0], "cantidad": cantidad}
+                    )
 
             conexion.close()
 
-            return prestamos_formateados
+            return libros_mas_prestados
 
         except Exception as e:
-            print(f"Error al obtener los libros más prestados del último mes: {e}")
+            print(f"Error al obtener los libros más prestados: {e}")
             return []
-"""

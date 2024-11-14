@@ -31,14 +31,6 @@ class Interfaz_Registro_Prestamo(ttk.Frame):
             font=("Arial", 10, "bold"),
         )
 
-        # Crear los elementos de la interfaz con estilo y espaciado
-        ttk.Label(self, text="Libro (ISBN):").grid(
-            row=0, column=0, padx=10, pady=(10, 5), sticky="w"
-        )
-        self.combo_isbn_libro = ttk.Combobox(self, state="readonly")
-        self.combo_isbn_libro.grid(row=0, column=1, padx=10, pady=(10, 5), sticky="ew")
-        self.cargar_libros()
-
         # Combobox para seleccionar "ID de Usuario"
         ttk.Label(self, text="ID de Usuario:").grid(
             row=1, column=0, padx=10, pady=5, sticky="w"
@@ -47,15 +39,23 @@ class Interfaz_Registro_Prestamo(ttk.Frame):
         self.combo_usuarios.grid(row=1, column=1, padx=10, pady=(10, 5), sticky="ew")
         self.cargar_usuarios()
 
+        # Crear los elementos de la interfaz con estilo y espaciado
+        ttk.Label(self, text="Libro (ISBN):").grid(
+            row=0, column=0, padx=10, pady=(10, 5), sticky="w"
+        )
+        self.combo_isbn_libro = ttk.Combobox(self, state="readonly")
+        self.combo_isbn_libro.grid(row=0, column=1, padx=10, pady=(10, 5), sticky="ew")
+        self.cargar_libros()
+
         # Campo de entrada para la fecha de prestamo
-        ttk.Label(self, text="Fecha de entrega (dd/mm/yyyy):").grid(
+        ttk.Label(self, text="Fecha de entrega (YYYY/MM/DD):").grid(
             row=2, column=0, padx=10, pady=5, sticky="w"
         )
         self.entry_fecha_prestamo = ttk.Entry(self)
         self.entry_fecha_prestamo.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
 
         # Campo de entrada para la fecha de devolucion
-        ttk.Label(self, text="Fecha de devolución (dd/mm/yyyy):").grid(
+        ttk.Label(self, text="Fecha de devolución (YYYY/MM/DD):").grid(
             row=3, column=0, padx=10, pady=5, sticky="w"
         )
         self.entry_fecha_devolucion = ttk.Entry(self)

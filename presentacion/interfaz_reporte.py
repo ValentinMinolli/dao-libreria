@@ -47,14 +47,14 @@ class Interfaz_Reportes(ttk.Frame):
         self.boton_generar_pdf.grid(row=2, column=0, columnspan=2, pady=(10, 10))
 
         # Botón para generar el reporte de libros más prestados
-        #self.boton_reporte_libros_mas_prestados = ttk.Button(
-            #self,
-            #text="Generar PDF de Libros Más Prestados en el Último Mes",
-            #command=self.generar_reporte_libros_mas_prestados,
-        #)
-        #self.boton_reporte_libros_mas_prestados.grid(
-            #row=3, column=0, columnspan=2, pady=(10, 10)
-        #)
+        self.boton_reporte_libros_mas_prestados = ttk.Button(
+            self,
+            text="Generar PDF de Libros Más Prestados en el Último Mes",
+            command=self.generar_reporte_libros_mas_prestados,
+        )
+        self.boton_reporte_libros_mas_prestados.grid(
+            row=3, column=0, columnspan=2, pady=(10, 10)
+        )
 
         # Configuración del frame
         self.columnconfigure(0, weight=1)
@@ -125,8 +125,6 @@ class Interfaz_Reportes(ttk.Frame):
         except Exception as e:
             print(f"No se pudo generar el PDF: {e}")
 
-
-"""
     def generar_reporte_libros_mas_prestados(self):
         try:
             # Obtener los datos de libros más prestados del último mes
@@ -161,13 +159,13 @@ class Interfaz_Reportes(ttk.Frame):
 
                 y_position -= 20
                 if y_position < 50:
-                    c.showPage()
-                    c.setFont("Helvetica", 10)
+                    c.showPage()  # Nueva página si se llena la actual
+                    c.setFont("Helvetica", 10)  # Mantener la misma fuente
                     y_position = 750
 
+            # Guardar el archivo PDF
             c.save()
             print(f"Reporte de libros más prestados generado exitosamente: {file_name}")
 
         except Exception as e:
             print(f"No se pudo generar el reporte de libros más prestados: {e}")
-"""

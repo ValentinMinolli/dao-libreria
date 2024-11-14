@@ -2,6 +2,7 @@ from tkinter import ttk, messagebox
 import tkinter as tk
 from gestores.gestor_prestamo import Gestor_Prestamos
 from gestores.gestor_libro import Gestor_Libros
+from gestores.gestor_usuario import Gestor_Usuarios
 
 
 class Interfaz_Devolucion_Libro(ttk.Frame):
@@ -11,6 +12,7 @@ class Interfaz_Devolucion_Libro(ttk.Frame):
         # Crear instancias de los gestores
         self.gestor_prestamos = Gestor_Prestamos()  # Gestor para los préstamos
         self.gestor_libros = Gestor_Libros()  # Gestor para los libros
+        self.gestor_usuarios = Gestor_Usuarios()  # Gestor para los usuarios
 
         # Configuración del estilo
         estilo = ttk.Style()
@@ -29,8 +31,9 @@ class Interfaz_Devolucion_Libro(ttk.Frame):
         ttk.Label(self, text="ID del Usuario:").grid(
             row=0, column=0, padx=10, pady=5, sticky="w"
         )
-        self.entry_usuario = ttk.Entry(self)
-        self.entry_usuario.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
+        self.combo_usuario = ttk.Combobox(self, state="readonly")
+        self.combo_usuario.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
+        self.cargar_usuarios()
 
         ttk.Label(self, text="Libro (ISBN):").grid(
             row=1, column=0, padx=10, pady=(10, 5), sticky="w"
@@ -58,15 +61,20 @@ class Interfaz_Devolucion_Libro(ttk.Frame):
         self.columnconfigure(1, weight=1)
 
         # Vincular la función para cargar los libros prestados al campo de ID de usuario
-        self.entry_usuario.bind("<KeyRelease>", self.cargar_libros_prestados)
+        self.combo_usuario.bind("<<ComboboxSelected>>", self.cargar_libros_prestados)
+
+    def cargar_usuarios(self):
+        """Carga los usuarios en el Combobox."""
+        usuarios = self.gestor_usuarios.obtener_usuarios()  # Obtener todos los usuarios
+        self.combo_usuario["values"] = [
+            usuario.id for usuario in usuarios
+        ]  # Usamos el id del objeto usuario
 
     def cargar_libros_prestados(self, event=None):
         """
         Carga los ISBN de los libros actualmente prestados que están en estado "Pendiente de Devolución".
         """
-        usuario_id = (
-            self.entry_usuario.get()
-        )  # Obtener ID de usuario desde el campo de entrada
+        usuario_id = self.combo_usuario.get()  # Obtener ID de usuario desde el ComboBox
 
         # Si no hay ID, no hacer nada
         if not usuario_id:
@@ -103,7 +111,7 @@ class Interfaz_Devolucion_Libro(ttk.Frame):
         """
         Registra la devolución de un libro.
         """
-        usuario_id = self.entry_usuario.get()
+        usuario_id = self.combo_usuario.get()
         isbn = self.combo_isbn_libro.get()
         en_condiciones = self.condiciones_var.get()
 
@@ -118,7 +126,7 @@ class Interfaz_Devolucion_Libro(ttk.Frame):
                 isbn, usuario_id, en_condiciones
             ):
                 messagebox.showinfo("Éxito", "Devolución registrada con éxito.")
-                self.entry_usuario.delete(0, tk.END)
+                self.combo_usuario.set("")
                 self.combo_isbn_libro.set("")
                 self.condiciones_combo.set("")
             else:
