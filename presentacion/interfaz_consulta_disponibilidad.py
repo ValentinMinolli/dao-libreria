@@ -2,7 +2,6 @@ from tkinter import ttk
 from tkinter import messagebox
 from gestores.gestor_libro import Gestor_Libros
 
-
 class Interfaz_Consulta_Disponibilidad(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
@@ -27,20 +26,35 @@ class Interfaz_Consulta_Disponibilidad(ttk.Frame):
         # Configurar la expansión de la columna
         self.columnconfigure(1, weight=1)
 
+    # En Interfaz_Consulta_Disponibilidad
+
+    # En Interfaz_Consulta_Disponibilidad
+
     def consultar_disponibilidad(self):
         isbn = self.entry_isbn.get()
         if not isbn:
-            messagebox.showwarning(
-                "Advertencia", "Por favor, ingresa el ISBN del libro."
-            )
+            messagebox.showwarning("Advertencia", "Por favor, ingresa el ISBN del libro.")
             return
 
-        disponible = self.gestor_libros.consultar_disponibilidad(isbn)
+    # Llamada al método actualizado para obtener cantidad, disponibilidad y copias prestadas
+        cantidad_total, disponible, copias_prestadas = self.gestor_libros.consultar_disponibilidad(
+            self.gestor_libros.db, isbn
+        )
+    
         if disponible:
             messagebox.showinfo(
-                "Disponibilidad", f"El libro con ISBN {isbn} está disponible."
+                "Disponibilidad",
+                f"El libro con ISBN {isbn} está disponible.\n"
+                f"Copias en stock: {cantidad_total}\n"
+                f"Copias prestadas: {copias_prestadas}"
             )
         else:
             messagebox.showinfo(
-                "Disponibilidad", f"El libro con ISBN {isbn} no está disponible."
+                "Disponibilidad",
+                f"El libro con ISBN {isbn} no está disponible.\n"
+                f"Copias en stock: {cantidad_total}\n"
+                f"Copias prestadas: {copias_prestadas}"
             )
+
+
+

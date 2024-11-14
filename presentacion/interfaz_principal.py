@@ -7,7 +7,6 @@ from presentacion.interfaz_registro_devolucion import Interfaz_Devolucion_Libro
 from presentacion.interfaz_consulta_disponibilidad import (
     Interfaz_Consulta_Disponibilidad,
 )  # Importar la nueva interfaz
-from presentacion.interfaz_reporte import Interfaz_Reportes
 from entidades.notificador.suscriptor import Suscriptor
 from gestores.gestor_libro import Gestor_Libros  # Importar el gestor necesario
 
@@ -31,7 +30,6 @@ class Aplicacion(Suscriptor):
         self.frame_usuario = Interfaz_Registro_Usuario(self.contenedor)
         self.frame_prestamo = Interfaz_Registro_Prestamo(self.contenedor)
         self.frame_devolucion = Interfaz_Devolucion_Libro(self.contenedor)
-        self.frame_reportes = Interfaz_Reportes(self.contenedor)
         self.frame_consulta_disponibilidad = Interfaz_Consulta_Disponibilidad(
             self.contenedor
         )
@@ -45,9 +43,6 @@ class Aplicacion(Suscriptor):
         self.contenedor.add(
             self.frame_consulta_disponibilidad, text="Consulta Disponibilidad"
         )
-        self.contenedor.add(
-            self.frame_reportes, text="Generar Reportes"
-        )  # Nueva pestaña de reporte
 
         # Volver a la pestaña activa antes de recargar
         self.contenedor.select(active_index)

@@ -139,11 +139,38 @@ class Gestor_Libros(Notificador):
             print(f"Error al modificar el libro: {e}")
             return False
 
+
     @staticmethod
     def consultar_disponibilidad(db, isbn):
         try:
-            db.cursor.execute("SELECT cantidad FROM Libro WHERE isbn = ?", (isbn,))
-            cantidad = db.cursor.fetchone()
-            return cantidad[0] > 0 if cantidad else False
+        # Crear cursor para la base de datos
+            cursor = db.get_connection().cursor()
+        
+        # Consultar la cantidad total de copias en stock
+            cursor.execute("SELECT cantidad FROM libro WHERE isbn = ?", (isbn,))
+            resultado_libro = cursor.fetchone()
+        
+        # Si el libro no existe, devolver que no está disponible y 0 copias prestadas
+            if resultado_libro is None:
+                return 0, False, 0  # No existe el libro en la base de datos
+        
+            cantidad_total = resultado_libro[0]
+            disponible = cantidad_total > 0
+
+        # Consultar la cantidad de copias actualmente prestadas y en estado pendiente de devolución
+            cursor.execute("""
+                SELECT COUNT(*) 
+                FROM prestamo 
+                WHERE libro_isbn = ? AND estado = 'Pendiente de Devolución'
+            """, (isbn,))
+            copias_prestadas = cursor.fetchone()[0]
+
+        # Calcular las copias disponibles como total - prestadas
+            copias_disponibles = max(0, cantidad_total - copias_prestadas)
+
+            return cantidad_total, copias_disponibles > 0, copias_prestadas
         except Exception as e:
-            return e
+            print(f"Error al consultar disponibilidad: {e}")
+            return 0, False, 0  # Valores seguros en caso de error
+        finally:
+            cursor.close()

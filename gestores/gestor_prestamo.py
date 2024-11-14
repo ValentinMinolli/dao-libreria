@@ -37,8 +37,22 @@ class Gestor_Prestamos(Notificador):
         try:
             gestor_libros = Gestor_Libros()
 
-            # Obtener datos del libro
+            # Comprobar si ya existe un préstamo pendiente para el mismo libro y usuario
             cursor = self.db.get_connection().cursor()
+            cursor.execute(
+                """
+                SELECT COUNT(*) FROM prestamo
+                WHERE usuario_id = ? AND libro_isbn = ? AND estado = 'Pendiente de Devolución'
+                """,
+                (usuario_id, libro_isbn),
+            )
+            prestamo_existente = cursor.fetchone()[0]
+
+            if prestamo_existente > 0:
+                print("Ya existe un préstamo pendiente para este libro y usuario.")
+                return False
+
+            # Obtener datos del libro
             cursor.execute("SELECT * FROM libro WHERE isbn = ?", (libro_isbn,))
             libro_data = cursor.fetchone()
 
@@ -59,7 +73,6 @@ class Gestor_Prestamos(Notificador):
                 "INSERT INTO prestamo (usuario_id, libro_isbn, fecha_prestamo, fecha_devolucion, estado) VALUES (?, ?, ?, ?, ?)",
                 (usuario_id, libro_isbn, fecha_prestamo, fecha_devolucion, estado),
             )
-            self.db.get_connection().commit()
 
             # Actualizar cantidad del libro con el orden correcto de parámetros
             gestor_libros.modificar(
@@ -71,7 +84,8 @@ class Gestor_Prestamos(Notificador):
                 libro.isbn,
             )
 
-            self.notificar()  # Notificar, si aplica
+            self.db.get_connection().commit()  # Confirmar transacción
+            self.notificar()  # Notificar si aplica
             return True
 
         except Exception as e:
