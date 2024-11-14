@@ -21,59 +21,34 @@ class Gestor_Libros(Notificador):
     def notificar(self):
         self.suscriptor.recibir_notificacion()
 
-    def registrar_con_autor(
-        self,
-        isbn,
-        titulo,
-        genero,
-        anio_publicacion,
-        nombre_autor,
-        apellido_autor,
-        cantidad,
+    def registrar_libro(
+        self, isbn, titulo, genero, anio_publicacion, autor_id, cantidad
     ):
-        """
-        Registra un libro en la base de datos y maneja la creación de un autor si no existe.
-        """
         try:
             cursor = self.db.get_connection().cursor()
 
-            # Verificar si el autor ya existe
-            cursor.execute(
-                "SELECT id FROM autor WHERE nombre = ? AND apellido = ?",
-                (nombre_autor, apellido_autor),
-            )
-            autor = cursor.fetchone()
+            # Verificar si el ISBN ya existe
+            print(f"Verificando si el ISBN {isbn} ya existe...")
+            cursor.execute("SELECT isbn FROM libro WHERE isbn = ?", (isbn,))
+            if cursor.fetchone():
+                print(f"Error: El ISBN {isbn} ya existe.")
+                raise Exception(f"El ISBN {isbn} ya está registrado.")
 
-            # Si el autor no existe, lo insertamos
-            if autor is None:
-                cursor.execute(
-                    "INSERT INTO autor (nombre, apellido) VALUES (?, ?)",
-                    (nombre_autor, apellido_autor),
-                )
-                autor_id = cursor.lastrowid  # Obtiene el id del nuevo autor
-            else:
-                autor_id = autor[0]  # Usamos el id del autor existente
-
-            # Comprobar si el libro ya existe
-            cursor.execute("SELECT * FROM libro WHERE isbn = ?", (isbn,))
-            if cursor.fetchone() is not None:
-                print("El libro ya existe.")
-                return False  # El libro ya existe
-
-            # Registrar el nuevo libro con el autor_id obtenido
+            # Insertar libro
+            print(f"Registrando libro con ISBN: {isbn}")
             cursor.execute(
                 "INSERT INTO libro (isbn, titulo, genero, anio_publicacion, autor_id, cantidad) VALUES (?, ?, ?, ?, ?, ?)",
                 (isbn, titulo, genero, anio_publicacion, autor_id, cantidad),
             )
+
+            # Confirmar la transacción
             self.db.get_connection().commit()
-            self.notificar()
-            return True  # Inserción exitosa
+            print(f"Libro con ISBN {isbn} registrado exitosamente.")
         except Exception as e:
             print(f"Error al registrar el libro: {e}")
-            self.db.get_connection().rollback()
-            return False
+            raise e
         finally:
-            cursor.close()
+            cursor.close()  # Asegurarnos de cerrar el cursor
 
     def obtener_isbn_libros(self):
         """
@@ -139,33 +114,35 @@ class Gestor_Libros(Notificador):
             print(f"Error al modificar el libro: {e}")
             return False
 
-
     @staticmethod
     def consultar_disponibilidad(db, isbn):
         try:
-        # Crear cursor para la base de datos
+            # Crear cursor para la base de datos
             cursor = db.get_connection().cursor()
-        
-        # Consultar la cantidad total de copias en stock
+
+            # Consultar la cantidad total de copias en stock
             cursor.execute("SELECT cantidad FROM libro WHERE isbn = ?", (isbn,))
             resultado_libro = cursor.fetchone()
-        
-        # Si el libro no existe, devolver que no está disponible y 0 copias prestadas
+
+            # Si el libro no existe, devolver que no está disponible y 0 copias prestadas
             if resultado_libro is None:
                 return 0, False, 0  # No existe el libro en la base de datos
-        
+
             cantidad_total = resultado_libro[0]
             disponible = cantidad_total > 0
 
-        # Consultar la cantidad de copias actualmente prestadas y en estado pendiente de devolución
-            cursor.execute("""
+            # Consultar la cantidad de copias actualmente prestadas y en estado pendiente de devolución
+            cursor.execute(
+                """
                 SELECT COUNT(*) 
                 FROM prestamo 
                 WHERE libro_isbn = ? AND estado = 'Pendiente de Devolución'
-            """, (isbn,))
+            """,
+                (isbn,),
+            )
             copias_prestadas = cursor.fetchone()[0]
 
-        # Calcular las copias disponibles como total - prestadas
+            # Calcular las copias disponibles como total - prestadas
             copias_disponibles = max(0, cantidad_total - copias_prestadas)
 
             return cantidad_total, copias_disponibles > 0, copias_prestadas

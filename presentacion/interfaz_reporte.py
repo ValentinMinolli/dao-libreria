@@ -1,103 +1,116 @@
 import tkinter as tk
-from tkinter import messagebox
-from datetime import datetime
+from tkinter import ttk
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-import tkinter as tk
-from tkinter import ttk, simpledialog, messagebox
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
+from datetime import datetime
 
-# from gestores.gestorServicio import GestorDeServicios
-# from gestores.gestorAuto import GestorDeAutos
-# from gestores.gestorVenta import GestorDeVentas
+from gestores.gestor_prestamo import Gestor_Prestamos
 
 
 class Interfaz_Reportes(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
 
-        # Configuración de estilo para los botones
+        # Crear instancia del gestor de préstamos
+        self.gestor_prestamos = Gestor_Prestamos()
+
+        # Configuración de estilo
         estilo = ttk.Style()
-        estilo.configure("TButton", padding=10, font=("Arial", 10, "bold"))
-
-        # Título de la interfaz
-        ttk.Label(self, text="Consultas de Reportes", font=("Arial", 14, "bold")).grid(
-            row=0, column=0, columnspan=2, pady=(10, 20)
+        estilo.configure("TFrame", background="#f2f2f2")
+        estilo.configure("TLabel", background="#f2f2f2", font=("Arial", 10, "bold"))
+        estilo.configure(
+            "TButton",
+            background="#007ACC",
+            foreground="white",
+            font=("Arial", 10, "bold"),
         )
 
-        self.boton_listado_ventas = ttk.Button(
+        # Crear un canvas para agregar la línea divisoria
+        self.canvas = tk.Canvas(self, bg="#f2f2f2", height=1, width=500)
+        self.canvas.grid(row=1, column=0, columnspan=2, pady=(10, 10))
+
+        # Título centrado y más grande
+        titulo = ttk.Label(
+            self, text="Reporte de Préstamos Vencidos", font=("Arial", 14, "bold")
+        )
+        titulo.grid(row=0, column=0, columnspan=2, pady=(10))
+
+        # Línea divisoria
+        self.canvas.create_line(0, 0, 500, 0, width=2, fill="black")
+
+        # Botón para generar el PDF
+        self.boton_generar_pdf = ttk.Button(
             self,
-            text="Listado de préstamos vencidos",
-            command=self.listado_prestamos_vencidos,
+            text="Generar PDF de Préstamos Vencidos",
+            command=self.generar_pdf_prestamos_vencidos,
         )
-        self.boton_listado_ventas.grid(
-            row=1, column=0, columnspan=2, sticky="ew", padx=10, pady=10
-        )
+        self.boton_generar_pdf.grid(row=2, column=0, columnspan=2, pady=(10, 10))
 
-        self.boton_ingresos_totales = ttk.Button(
-            self,
-            text="Listado de libros más prestados en el último mes (PDF) (PDF)",
-            command=self.listado_libros_mas_prestados,
-        )
-        self.boton_ingresos_totales.grid(
-            row=2, column=0, columnspan=2, sticky="ew", padx=10, pady=10
-        )
+        # Configuración del frame
+        self.columnconfigure(0, weight=1)
 
-        self.boton_autos_mas_vendidos = ttk.Button(
-            self,
-            text="Listado de usuarios que han tomado más libros en préstamo (PDF)",
-            command=self.cant_libros_prestados_a_usuario,
-        )
-        self.boton_autos_mas_vendidos.grid(
-            row=3, column=0, columnspan=2, sticky="ew", padx=10, pady=10
-        )
-
-    # Función para generar el reporte en PDF
-    def listado_prestamos_vencidos(self, prestamos):
+    def generar_pdf_prestamos_vencidos(self):
         try:
-            nombre_archivo = "reporte_prestamos_vencidos.pdf"
-            c = canvas.Canvas(nombre_archivo, pagesize=letter)
-            width, height = letter
+            # Obtener los préstamos vencidos desde el gestor de préstamos
+            prestamos_vencidos = self.gestor_prestamos.obtener_prestamos_vencidos()
 
-            # Título del PDF
-            c.setFont("Helvetica-Bold", 16)
-            c.drawString(200, height - 50, "Reporte de Préstamos Vencidos")
+            # Si no hay préstamos vencidos, mostrar mensaje y salir
+            if not prestamos_vencidos:
+                print("No hay préstamos vencidos para generar el reporte.")
+                return
 
-            # Detalles del préstamo
-            c.setFont("Helvetica", 10)
-            y_position = height - 80
+            # Crear el archivo PDF
+            file_name = "reporte_prestamos_vencidos.pdf"
+            c = canvas.Canvas(file_name, pagesize=letter)
+            c.setFont("Helvetica", 25)
 
-            for prestamo in prestamos:
-                isbn = prestamo["isbn"]
-                nombre_libro = prestamo["nombre_libro"]
-                fecha_prestamo = datetime.strptime(
-                    prestamo["fecha_prestamo"], "%Y-%m-%d"
-                )
-                fecha_actual = datetime.now()
+            # Título del reporte
+            c.drawString(100, 750, "Reporte de Préstamos Vencidos")
+            c.setFont("Helvetica", 8)  # Reducir tamaño de fuente para más espacio
 
-                # Calcular el tiempo vencido
-                tiempo_vencido = (fecha_actual - fecha_prestamo).days
+            # Definir márgenes y longitud de la línea divisoria
+            margen_izquierdo = 50  # Inicia donde empieza la primera columna
+            margen_derecho = 550  # Termina antes de pasar el margen derecho
 
-                c.drawString(50, y_position, f"ISBN: {isbn}")
-                c.drawString(200, y_position, f"Nombre: {nombre_libro}")
-                c.drawString(400, y_position, f"Vencido por: {tiempo_vencido} días")
+            # Ajustar la línea divisoria para que respete los márgenes
+            c.setLineWidth(0.5)
+            c.line(
+                margen_izquierdo, 735, margen_derecho, 735
+            )  # Línea divisoria ajustada
 
-                y_position -= 20
+            # Encabezado de las columnas (ajustar espaciado entre columnas)
+            c.drawString(margen_izquierdo, 720, "Nombre del Usuario")
+            c.drawString(margen_izquierdo + 130, 720, "Apellido del Usuario")
+            c.drawString(margen_izquierdo + 260, 720, "ISBN del Libro")
+            c.drawString(margen_izquierdo + 390, 720, "Días Vencidos")
 
-                # Si llegamos al final de la página, comenzamos una nueva página
-                if y_position < 40:
-                    c.showPage()
-                    y_position = height - 50
+            # Mostrar los préstamos vencidos
+            y_position = 700  # Posición vertical para los registros
+            for prestamo in prestamos_vencidos:
+                nombre_usuario = prestamo["nombre_usuario"]
+                apellido_usuario = prestamo["apellido_usuario"]
+                libro_isbn = prestamo["libro_isbn"]
+                dias_vencidos = prestamo["dias_vencidos"]
+
+                # Dibujar los valores de las columnas directamente en posiciones fijas
+                c.drawString(margen_izquierdo, y_position, nombre_usuario)
+                c.drawString(margen_izquierdo + 130, y_position, apellido_usuario)
+                c.drawString(margen_izquierdo + 260, y_position, libro_isbn)
+                c.drawString(margen_izquierdo + 390, y_position, str(dias_vencidos))
+
+                # Ajustar la posición para el siguiente registro
+                y_position -= 15  # Espacio entre filas
+
+                # Verificar si llegamos al final de la página
+                if y_position < 50:
+                    c.showPage()  # Crear una nueva página
+                    c.setFont("Helvetica", 8)  # Mantener la misma fuente
+                    y_position = 750  # Restablecer la posición
 
             # Guardar el archivo PDF
             c.save()
-            messagebox.showinfo("Éxito", f"Reporte generado: {nombre_archivo}")
+
+            print(f"Reporte generado exitosamente: {file_name}")
+
         except Exception as e:
-            messagebox.showerror("Error", f"Hubo un error al generar el reporte: {e}")
-
-    def listado_libros_mas_prestados(self):
-        pass
-
-    def cant_libros_prestados_a_usuario(self):
-        pass
+            print(f"No se pudo generar el PDF: {e}")
