@@ -56,6 +56,16 @@ class Interfaz_Reportes(ttk.Frame):
             row=3, column=0, columnspan=2, pady=(10, 10)
         )
 
+        # **Nuevo Botón** para generar el reporte de usuarios con cantidad de préstamos
+        self.boton_reporte_usuarios_con_prestamos = ttk.Button(
+            self,
+            text="Generar PDF de Usuarios y Cantidad de Préstamos",
+            command=self.generar_reporte_usuarios_con_prestamos,
+        )
+        self.boton_reporte_usuarios_con_prestamos.grid(
+            row=4, column=0, columnspan=2, pady=(10, 10)
+        )
+
         # Configuración del frame
         self.columnconfigure(0, weight=1)
 
@@ -169,3 +179,53 @@ class Interfaz_Reportes(ttk.Frame):
 
         except Exception as e:
             print(f"No se pudo generar el reporte de libros más prestados: {e}")
+
+    # Función para generar el reporte de usuarios con cantidad de préstamos
+    def generar_reporte_usuarios_con_prestamos(self):
+        try:
+            # Obtener los datos de usuarios y cantidad de préstamos desde el gestor
+            usuarios_con_prestamos = (
+                self.gestor_prestamos.obtener_historial_prestamos_usuario()
+            )
+
+            if not usuarios_con_prestamos:
+                print("No hay usuarios con préstamos para generar el reporte.")
+                return
+
+            # Crear el archivo PDF del reporte de usuarios con cantidad de préstamos
+            file_name = "reporte_usuarios_con_prestamos.pdf"
+            c = canvas.Canvas(file_name, pagesize=letter)
+            c.setFont("Helvetica", 20)
+
+            # Título del reporte
+            c.drawString(100, 750, "Reporte de Usuarios y Cantidad de Préstamos")
+            c.setFont("Helvetica", 10)
+
+            # Encabezado de las columnas
+            c.drawString(50, 720, "Nombre")
+            c.drawString(250, 720, "Apellido")
+            c.drawString(450, 720, "Cantidad de Préstamos")
+
+            # Posición vertical para los registros
+            y_position = 700
+            for usuario in usuarios_con_prestamos:
+                c.drawString(50, y_position, usuario["nombre"])  # Nombre
+                c.drawString(250, y_position, usuario["apellido"])  # Apellido
+                c.drawString(
+                    450, y_position, str(usuario["cantidad_prestamos"])
+                )  # Cantidad
+
+                y_position -= 20
+                if y_position < 50:
+                    c.showPage()  # Nueva página si se llena la actual
+                    c.setFont("Helvetica", 10)  # Mantener la misma fuente
+                    y_position = 750
+
+            # Guardar el archivo PDF
+            c.save()
+            print(
+                f"Reporte de usuarios con préstamos generado exitosamente: {file_name}"
+            )
+
+        except Exception as e:
+            print(f"No se pudo generar el reporte de usuarios con préstamos: {e}")

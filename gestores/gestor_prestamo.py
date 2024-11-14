@@ -349,3 +349,47 @@ class Gestor_Prestamos(Notificador):
         except Exception as e:
             print(f"Error al obtener los libros más prestados: {e}")
             return []
+
+    def obtener_historial_prestamos_usuario(self):
+        """
+        Obtiene el nombre, apellido y cantidad total de préstamos históricos de todos los usuarios.
+        """
+        try:
+            conexion = self.db.get_connection()
+            cursor = conexion.cursor()
+
+            # Consulta para obtener el nombre, apellido y cantidad de préstamos históricos de cada usuario
+            cursor.execute(
+                """
+                SELECT usuario.nombre, usuario.apellido, COUNT(prestamo.id) AS cantidad_prestamos
+                FROM prestamo
+                JOIN usuario ON prestamo.usuario_id = usuario.id
+                GROUP BY usuario.id
+                ORDER BY cantidad_prestamos DESC
+                """
+            )
+            usuarios_historial = cursor.fetchall()
+
+            # Si no hay préstamos, devolvemos un mensaje
+            if not usuarios_historial:
+                print("No hay préstamos históricos para mostrar.")
+                return []
+
+            # Formateamos la información de cada usuario
+            historial = []
+            for usuario in usuarios_historial:
+                historial.append(
+                    {
+                        "nombre": usuario[0],
+                        "apellido": usuario[1],
+                        "cantidad_prestamos": usuario[2],
+                    }
+                )
+
+            conexion.close()
+
+            return historial
+
+        except Exception as e:
+            print(f"Error al obtener el historial de préstamos de los usuarios: {e}")
+            return []
