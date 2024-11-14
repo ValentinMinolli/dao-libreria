@@ -38,13 +38,23 @@ class Interfaz_Reportes(ttk.Frame):
         # Línea divisoria
         self.canvas.create_line(0, 0, 500, 0, width=2, fill="black")
 
-        # Botón para generar el PDF
+        # Botón para generar el PDF de préstamos vencidos
         self.boton_generar_pdf = ttk.Button(
             self,
             text="Generar PDF de Préstamos Vencidos",
             command=self.generar_pdf_prestamos_vencidos,
         )
         self.boton_generar_pdf.grid(row=2, column=0, columnspan=2, pady=(10, 10))
+
+        # Botón para generar el reporte de libros más prestados
+        #self.boton_reporte_libros_mas_prestados = ttk.Button(
+            #self,
+            #text="Generar PDF de Libros Más Prestados en el Último Mes",
+            #command=self.generar_reporte_libros_mas_prestados,
+        #)
+        #self.boton_reporte_libros_mas_prestados.grid(
+            #row=3, column=0, columnspan=2, pady=(10, 10)
+        #)
 
         # Configuración del frame
         self.columnconfigure(0, weight=1)
@@ -114,3 +124,50 @@ class Interfaz_Reportes(ttk.Frame):
 
         except Exception as e:
             print(f"No se pudo generar el PDF: {e}")
+
+
+"""
+    def generar_reporte_libros_mas_prestados(self):
+        try:
+            # Obtener los datos de libros más prestados del último mes
+            libros_mas_prestados = (
+                self.gestor_prestamos.obtener_libros_mas_prestados_ultimo_mes()
+            )
+
+            if not libros_mas_prestados:
+                print("No hay préstamos en el último mes para generar el reporte.")
+                return
+
+            # Crear el archivo PDF del reporte de libros más prestados
+            file_name = "reporte_libros_mas_prestados.pdf"
+            c = canvas.Canvas(file_name, pagesize=letter)
+            c.setFont("Helvetica", 20)
+
+            # Título del reporte
+            c.drawString(100, 750, "Reporte de Libros Más Prestados en el Último Mes")
+            c.setFont("Helvetica", 10)
+
+            # Encabezado de las columnas
+            c.drawString(50, 720, "ISBN")
+            c.drawString(250, 720, "Título")
+            c.drawString(450, 720, "Cantidad de Préstamos")
+
+            # Posición vertical para los registros
+            y_position = 700
+            for libro in libros_mas_prestados:
+                c.drawString(50, y_position, libro["isbn"])  # ISBN
+                c.drawString(250, y_position, libro["titulo"])  # Título
+                c.drawString(450, y_position, str(libro["cantidad"]))  # Cantidad
+
+                y_position -= 20
+                if y_position < 50:
+                    c.showPage()
+                    c.setFont("Helvetica", 10)
+                    y_position = 750
+
+            c.save()
+            print(f"Reporte de libros más prestados generado exitosamente: {file_name}")
+
+        except Exception as e:
+            print(f"No se pudo generar el reporte de libros más prestados: {e}")
+"""

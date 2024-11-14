@@ -1,9 +1,10 @@
 from base_de_datos.database_connection import DatabaseConnection
 from entidades.notificador.notificador import Notificador
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from gestores.gestor_libro import Gestor_Libros
 from entidades.Libro import Libro
 from entidades.Prestamo import Prestamo
+import sqlite3
 
 
 class Gestor_Prestamos(Notificador):
@@ -208,9 +209,9 @@ class Gestor_Prestamos(Notificador):
             todos_prestamos = cursor.fetchall()
             print("Todos los préstamos en la base de datos:")
             for prestamo in todos_prestamos:
-                print(prestamo)  # Muestra el registro completo para inspección
+                print(dict(prestamo))  # Muestra el registro completo para inspección
 
-            # Consulta para préstamos vencidos con estado "Pendiente de Devolución"
+            # Consulta para préstamos pendientes de devolución
             cursor.execute(
                 """
                 SELECT usuario.nombre AS nombre_usuario, usuario.apellido AS apellido_usuario, 
@@ -231,35 +232,36 @@ class Gestor_Prestamos(Notificador):
 
     def obtener_prestamos_vencidos(self):
         try:
-            conexion = self.db.get_connection()
-            cursor = conexion.cursor()
+            # Llamar a la función verificar_prestamos para obtener los pendientes
+            prestamos = self.verificar_prestamos()
 
+            if not prestamos:
+                print("No hay préstamos pendientes de devolución.")
+                return []
+
+            # Obtener la fecha actual
             today = datetime.now().date()
-
-            query = """
-            SELECT u.nombre, u.apellido, p.libro_isbn, p.fecha_devolucion
-            FROM prestamo p
-            JOIN usuario u ON p.usuario_id = u.id
-            WHERE p.estado = 'Pendiente de Devolución' AND p.fecha_devolucion < ?
-            """
-            cursor.execute(query, (today,))
-            prestamos = cursor.fetchall()
+            print(f"Fecha actual para comparación: {today}")
 
             prestamos_vencidos = []
             for prestamo in prestamos:
-                nombre_usuario = prestamo[0]
-                apellido_usuario = prestamo[1]
-                libro_isbn = prestamo[2]
-                fecha_devolucion = prestamo[3]
+                nombre_usuario = prestamo["nombre_usuario"]
+                apellido_usuario = prestamo["apellido_usuario"]
+                libro_isbn = prestamo["libro_isbn"]
+                fecha_devolucion = prestamo["fecha_devolucion"]
 
-                try:
-                    fecha_devolucion = datetime.strptime(
-                        fecha_devolucion, "%d/%m/%Y"
-                    ).date()
-                except ValueError as e:
-                    print(f"Error al convertir la fecha de devolución: {e}")
-                    continue
+                # Convertir fecha_devolucion a tipo datetime.date si es una cadena
+                if isinstance(fecha_devolucion, str):
+                    try:
+                        # Cambiar el formato de la fecha para que coincida con el formato 'YYYY/MM/DD'
+                        fecha_devolucion = datetime.strptime(
+                            fecha_devolucion, "%Y/%m/%d"
+                        ).date()
+                    except ValueError as e:
+                        print(f"Error al convertir la fecha de devolución: {e}")
+                        continue
 
+                # Calcular días vencidos
                 dias_vencidos = (today - fecha_devolucion).days
 
                 if dias_vencidos > 0:
@@ -272,10 +274,101 @@ class Gestor_Prestamos(Notificador):
                         }
                     )
 
-            conexion.close()
+            # Mensaje si no hay préstamos vencidos
+            if not prestamos_vencidos:
+                print("No hay préstamos vencidos para generar el reporte.")
 
             return prestamos_vencidos
 
         except Exception as e:
             print(f"Error al obtener los préstamos vencidos: {e}")
             return []
+
+
+"""
+    @staticmethod
+    def convertir_fecha(fecha_str):
+
+        Convierte una fecha en formato DD/MM/YYYY a YYYY-MM-DD.
+
+        try:
+            # Convertir la fecha de DD/MM/YYYY a YYYY-MM-DD
+            fecha_obj = datetime.strptime(fecha_str, "%d/%m/%Y")
+            return fecha_obj.date()
+        except Exception as e:
+            print(f"Error al convertir la fecha: {e}")
+            return None
+
+    def obtener_libros_mas_prestados_ultimo_mes(self):
+        try:
+            conexion = self.db.get_connection()
+            cursor = conexion.cursor()
+
+            # Obtén el primer y último día del mes anterior en formato YYYY-MM-DD
+            today = datetime.now().date()
+            primer_dia_mes_anterior = (
+                today.replace(day=1) - timedelta(days=1)
+            ).replace(day=1)
+            ultimo_dia_mes_anterior = today.replace(day=1) - timedelta(days=1)
+
+            # Depuración: imprime las fechas de consulta
+            print(
+                f"Fechas de consulta: {primer_dia_mes_anterior} a {ultimo_dia_mes_anterior}"
+            )
+
+            # Imprimir las fechas de la base de datos para ver cómo están almacenadas
+            cursor.execute("SELECT DISTINCT fecha_prestamo FROM prestamo")
+            fechas_bd = cursor.fetchall()
+            print("Fechas en la base de datos:", [fecha[0] for fecha in fechas_bd])
+
+            # Filtrar las fechas de los préstamos que están en el rango del mes anterior
+            prestamos_mes_anterior = []
+            for fecha_str in fechas_bd:
+                fecha_prestamo = fecha_str[0]
+                fecha_convertida = self.convertir_fecha(
+                    fecha_prestamo
+                )  # Usamos self.convertir_fecha() aquí
+                if (
+                    fecha_convertida
+                    and primer_dia_mes_anterior
+                    <= fecha_convertida
+                    <= ultimo_dia_mes_anterior
+                ):
+                    prestamos_mes_anterior.append(fecha_str[0])
+
+            # Depuración: imprimir los préstamos encontrados en el mes anterior
+            print("Préstamos encontrados en el mes anterior:", prestamos_mes_anterior)
+
+            # Si no se encuentran préstamos, devuelve un mensaje
+            if not prestamos_mes_anterior:
+                print("No hay préstamos en el último mes para generar el reporte.")
+                conexion.close()
+                return []
+
+            # Crear un diccionario para contar los préstamos por ISBN
+            prestamos_dict = {}
+            for prestamo in prestamos_mes_anterior:
+                isbn = prestamo[
+                    0
+                ]  # Esto parece estar incorrecto, debería usar la columna ISBN
+                if isbn not in prestamos_dict:
+                    prestamos_dict[isbn] = 1
+                else:
+                    prestamos_dict[isbn] += 1
+
+            # Generar la lista final de los libros más prestados
+            prestamos_formateados = []
+            for isbn, cantidad in prestamos_dict.items():
+                prestamos_formateados.append({"isbn": isbn, "cantidad": cantidad})
+
+            # Ordenar por la cantidad de préstamos (de mayor a menor)
+            prestamos_formateados.sort(key=lambda x: x["cantidad"], reverse=True)
+
+            conexion.close()
+
+            return prestamos_formateados
+
+        except Exception as e:
+            print(f"Error al obtener los libros más prestados del último mes: {e}")
+            return []
+"""
