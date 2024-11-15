@@ -1,8 +1,13 @@
+import tempfile
 import tkinter as tk
 from tkinter import ttk
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from datetime import datetime
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+import matplotlib.pyplot as plt
+from io import BytesIO
+import os
 
 from gestores.gestor_prestamo import Gestor_Prestamos
 
@@ -104,6 +109,10 @@ class Interfaz_Reportes(ttk.Frame):
             c.drawString(margen_izquierdo + 260, 720, "ISBN del Libro")
             c.drawString(margen_izquierdo + 390, 720, "Días Vencidos")
 
+            # Definir márgenes y longitud de la línea divisoria
+            margen_izquierdo = 50  # Inicia donde empieza la primera columna
+            margen_derecho = 550  # Termina antes de pasar el margen derecho
+
             # Mostrar los préstamos vencidos
             y_position = 700  # Posición vertical para los registros
             for prestamo in prestamos_vencidos:
@@ -155,6 +164,16 @@ class Interfaz_Reportes(ttk.Frame):
             c.drawString(100, 750, "Reporte de Libros Más Prestados en el Último Mes")
             c.setFont("Helvetica", 10)
 
+            # Definir márgenes y longitud de la línea divisoria
+            margen_izquierdo = 50  # Inicia donde empieza la primera columna
+            margen_derecho = 550  # Termina antes de pasar el margen derecho
+
+            # Ajustar la línea divisoria para que respete los márgenes
+            c.setLineWidth(0.5)
+            c.line(
+                margen_izquierdo, 735, margen_derecho, 735
+            )  # Línea divisoria ajustada
+
             # Encabezado de las columnas
             c.drawString(50, 720, "ISBN")
             c.drawString(250, 720, "Título")
@@ -173,12 +192,39 @@ class Interfaz_Reportes(ttk.Frame):
                     c.setFont("Helvetica", 10)  # Mantener la misma fuente
                     y_position = 750
 
+            # Nueva página para el gráfico de torta
+            c.showPage()
+
+            # Crear el gráfico de torta de los libros más prestados
+            self.mostrar_grafico_torta(libros_mas_prestados, c)  # Sin 'y_position'
+
             # Guardar el archivo PDF
             c.save()
             print(f"Reporte de libros más prestados generado exitosamente: {file_name}")
 
         except Exception as e:
             print(f"No se pudo generar el reporte de libros más prestados: {e}")
+
+    def mostrar_grafico_torta(self, libros_mas_prestados, pdf_canvas):
+        # Crear gráfico de torta
+        labels = [libro["titulo"] for libro in libros_mas_prestados]
+        sizes = [libro["cantidad"] for libro in libros_mas_prestados]
+
+        fig, ax = plt.subplots()
+        ax.pie(sizes, labels=labels, autopct="%1.1f%%", startangle=90)
+        ax.axis("equal")  # Para que el gráfico sea circular
+
+        # Guardar la imagen en un archivo temporal
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
+            img_path = tmpfile.name
+            plt.savefig(img_path, format="png")
+            plt.close(fig)  # Cerrar la figura de matplotlib para liberar memoria
+
+        # Insertar la imagen en el PDF desde el archivo temporal
+        pdf_canvas.drawImage(img_path, 100, 400, width=400, height=300)
+
+        # Eliminar el archivo temporal después de insertarlo en el PDF
+        os.remove(img_path)
 
     # Función para generar el reporte de usuarios con cantidad de préstamos
     def generar_reporte_usuarios_con_prestamos(self):
@@ -200,6 +246,16 @@ class Interfaz_Reportes(ttk.Frame):
             # Título del reporte
             c.drawString(100, 750, "Reporte de Usuarios y Cantidad de Préstamos")
             c.setFont("Helvetica", 10)
+
+            # Definir márgenes y longitud de la línea divisoria
+            margen_izquierdo = 50  # Inicia donde empieza la primera columna
+            margen_derecho = 550  # Termina antes de pasar el margen derecho
+
+            # Ajustar la línea divisoria para que respete los márgenes
+            c.setLineWidth(0.5)
+            c.line(
+                margen_izquierdo, 735, margen_derecho, 735
+            )  # Línea divisoria ajustada
 
             # Encabezado de las columnas
             c.drawString(50, 720, "Nombre")
